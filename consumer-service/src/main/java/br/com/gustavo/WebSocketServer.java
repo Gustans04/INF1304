@@ -11,16 +11,17 @@
  */
 package br.com.gustavo;
 
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+
 import org.glassfish.tyrus.server.Server;
-import java.util.Date;
 
 @ServerEndpoint(value = "/ws")
 public class WebSocketServer {
