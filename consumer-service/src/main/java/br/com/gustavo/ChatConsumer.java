@@ -24,7 +24,7 @@ public class ChatConsumer {
 
     private static final String TOPIC = "chat-messages";
     /// Nome do tópico Kafka do chat.
- private static final String BOOTSTRAP_SERVERS = "kafka:9092";
+ private static final String BOOTSTRAP_SERVERS = System.getenv("KAFKA_BOOTSTRAP_SERVERS");
     /// Endereços dos servidores Kafka.
  private static final String GROUP_ID = "chat-consumer-group";
     /// ID do grupo de consumidores Kafka.

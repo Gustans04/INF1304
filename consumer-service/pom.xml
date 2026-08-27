@@ -12,10 +12,9 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
-
     <build>
         <finalName>consumer-service</finalName>
-        <sourceDirectory>src</sourceDirectory>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

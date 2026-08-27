@@ -1,5 +1,5 @@
 services:
-  kafka: # Nome do serviço Kafka
+  kafka-1: # Nome do serviço Kafka
     image: apache/kafka:latest # Imagem oficial do Kafka
     #container_name: kafka # Nome do container
     ports: # Mapeamento de portas
@@ -11,11 +11,11 @@ services:
       KAFKA_PROCESS_ROLES: broker,controller # Define os papéis do nó Kafka (broker e controller)
 
       # Controller interno
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093 # KAFKA_CONTROLLER_QUORUM_VOTERS is a comma-separated list of the controllers
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093, 2@kafka-2:9093, 3@kafka-3:9093 # KAFKA_CONTROLLER_QUORUM_VOTERS is a comma-separated list of the controllers
 
       # Listeners
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
 
       # Protocolos dos listeners
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
@@ -27,15 +27,111 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
 
       # Configurações para um único broker
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
 
       # Criar tópicos automaticamente
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
     volumes: # Montagem de volume para persistência de dados do Kafka
-      - kafka-data:/var/lib/kafka/data
+      - kafka-1-data:/var/lib/kafka/data
+
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+    networks:
+      - int-network
+
+  kafka-2: # Nome do serviço Kafka
+    image: apache/kafka:latest # Imagem oficial do Kafka
+    #container_name: kafka # Nome do container
+    ports: # Mapeamento de portas
+      - "9092:9092" # Porta para comunicação com clientes Kafka
+    environment: # Variáveis de ambiente para configuração do Kafka
+      # FROM: https://hub.docker.com/r/apache/kafka
+      # Kafka em modo KRaft: broker + controller
+      KAFKA_NODE_ID: 2 # Identificador único do nó Kafka
+      KAFKA_PROCESS_ROLES: broker,controller # Define os papéis do nó Kafka (broker e controller)
+
+      # Controller interno
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093, 2@kafka-2:9093, 3@kafka-3:9093 # KAFKA_CONTROLLER_QUORUM_VOTERS is a comma-separated list of the controllers
+
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092
+
+      # Protocolos dos listeners
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      # Listener usado pelos brokers para comunicação interna
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # Listener usado pelo controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Configurações para um único broker
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+
+      # Criar tópicos automaticamente
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+    volumes: # Montagem de volume para persistência de dados do Kafka
+      - kafka-2-data:/var/lib/kafka/data
+
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+    networks:
+      - int-network
+
+  kafka-3: # Nome do serviço Kafka
+    image: apache/kafka:latest # Imagem oficial do Kafka
+    #container_name: kafka # Nome do container
+    ports: # Mapeamento de portas
+      - "9092:9092" # Porta para comunicação com clientes Kafka
+    environment: # Variáveis de ambiente para configuração do Kafka
+      # FROM: https://hub.docker.com/r/apache/kafka
+      # Kafka em modo KRaft: broker + controller
+      KAFKA_NODE_ID: 3 # Identificador único do nó Kafka
+      KAFKA_PROCESS_ROLES: broker,controller # Define os papéis do nó Kafka (broker e controller)
+
+      # Controller interno
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093, 2@kafka-2:9093, 3@kafka-3:9093 # KAFKA_CONTROLLER_QUORUM_VOTERS is a comma-separated list of the controllers
+
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092
+
+      # Protocolos dos listeners
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      # Listener usado pelos brokers para comunicação interna
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # Listener usado pelo controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Configurações para um único broker
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+
+      # Criar tópicos automaticamente
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+    volumes: # Montagem de volume para persistência de dados do Kafka
+      - kafka-3-data:/var/lib/kafka/data
 
     deploy:
       resources:
@@ -48,12 +144,17 @@ services:
       - int-network
 
   producer-service:
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+
     build: ./producer-service
     ports:
       - "8080:8080"
 
     depends_on:
-      - kafka
+      - kafka-1
+      - kafka-2
+      - kafka-3
 
     deploy:
       resources:
@@ -67,12 +168,17 @@ services:
       - ext-network
 
   consumer-service:
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+
     build: ./consumer-service
     ports:
       - "8081:8080"
 
     depends_on:
-      - kafka
+      - kafka-1
+      - kafka-2
+      - kafka-3
 
     deploy:
       resources:
@@ -86,7 +192,9 @@ services:
       - int-network
 
 volumes:
-  kafka-data:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
 
 networks:
   ext-network:
